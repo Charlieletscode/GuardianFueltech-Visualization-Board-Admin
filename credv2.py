@@ -5,8 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
-import io
-from PIL import Image
+
 
 def to_integer(dt_time):
     return 10000*dt_time.year + 100*dt_time.month + dt_time.day
@@ -43,16 +42,12 @@ url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visual
 response = requests.get(url)
 data = json.loads(response.text)
 st.session_state.q2 = pd.DataFrame(data)
-
-header_image_url = "https://github.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/blob/main/Header.jpg"
+header_image = "header.jpg"
 header_text = "Visualization Board Admin"
 
 col1, col2 = st.columns([5, 2])
 col1.title(header_text)
-
-response = requests.get(header_image_url)
-image = Image.open(io.BytesIO(response.content))
-col2.image(image, use_column_width=True)
+col2.image(header_image, use_column_width=True)
 
 st.sidebar.subheader("BranchName")
 q1_df = st.session_state.q1
@@ -222,8 +217,3 @@ st.dataframe(oldest_service_calls)
 
             # st.empty() 
             # st.experimental_rerun()
-
-
-    
-
-    
