@@ -4,6 +4,7 @@ from datetime import *
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import requests
 
 
 def to_integer(dt_time):
