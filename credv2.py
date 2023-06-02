@@ -27,16 +27,20 @@ if "q3" not in st.session_state:
 if "change" not in st.session_state:
         st.session_state.change = None
 
-with open('./sampledata/q1.json', 'r') as f:
-    data = json.load(f)
+url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/main/sampleData/q1.json"
+response = requests.get(url)
+data = json.loads(response.text)
 st.session_state.q1 = pd.DataFrame(data)
 
-with open('./sampledata/q2.json', 'r') as f:
-    data = json.load(f)
+url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/main/sampleData/q2.json"
+response = requests.get(url)
+data = json.loads(response.text)
 st.session_state.q2 = pd.DataFrame(data)
-with open('./sampledata/q3.json', 'r') as f:
-    data = json.load(f)
 
+url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/main/sampleData/q2.json"
+response = requests.get(url)
+data = json.loads(response.text)
+st.session_state.q2 = pd.DataFrame(data)
 header_image = "header.jpg"
 header_text = "Visualization Board Admin"
 
