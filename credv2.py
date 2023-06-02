@@ -48,7 +48,10 @@ header_text = "Visualization Board Admin"
 
 col1, col2 = st.columns([5, 2])
 col1.title(header_text)
-col2.image(header_image, use_column_width=True)
+
+response = requests.get(header_image_url)
+image = Image.open(io.BytesIO(response.content))
+col2.image(image, use_column_width=True)
 
 st.sidebar.subheader("BranchName")
 q1_df = st.session_state.q1
