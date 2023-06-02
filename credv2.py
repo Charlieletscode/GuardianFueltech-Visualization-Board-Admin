@@ -42,7 +42,8 @@ url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visual
 response = requests.get(url)
 data = json.loads(response.text)
 st.session_state.q2 = pd.DataFrame(data)
-header_image = "header.jpg"
+
+header_image = "https://github.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/blob/main/Header.jpg"
 header_text = "Visualization Board Admin"
 
 col1, col2 = st.columns([5, 2])
