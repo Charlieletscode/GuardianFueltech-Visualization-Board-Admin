@@ -38,7 +38,7 @@ response = requests.get(url)
 data = json.loads(response.text)
 st.session_state.q2 = pd.DataFrame(data)
 
-url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/main/sampleData/q3.json"
+url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/main/sampleData/q2.json"
 response = requests.get(url)
 data = json.loads(response.text)
 st.session_state.q2 = pd.DataFrame(data)
