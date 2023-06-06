@@ -38,10 +38,10 @@ response = requests.get(url)
 data = json.loads(response.text)
 st.session_state.q2 = pd.DataFrame(data)
 
-url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/main/sampleData/q2.json"
+url = "https://raw.githubusercontent.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/main/sampleData/q3.json"
 response = requests.get(url)
 data = json.loads(response.text)
-st.session_state.q2 = pd.DataFrame(data)
+st.session_state.q3 = pd.DataFrame(data)
 header_image = "https://github.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/blob/main/Header.jpg?raw=true"
 header_text = "Visualization Board Admin"
 
