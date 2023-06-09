@@ -73,8 +73,6 @@ def fetch_dataToLocal():
     # st.write(q2_df)
     # st.write(q3_df)
 
-fetch_dataToLocal()
-
 def fetch_data():
     server = "GFTUE2PDGPSQL01"
     database = "GFT"
