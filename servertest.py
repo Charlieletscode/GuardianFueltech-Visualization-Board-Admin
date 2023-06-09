@@ -137,4 +137,3 @@ def fetch_data():
     return q1_df, q2_df, q3_df, response
 
 fetch_data()
-fetch_dataToLocal()
