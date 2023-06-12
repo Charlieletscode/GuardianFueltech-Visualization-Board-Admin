@@ -10,8 +10,8 @@ import pyodbc
 from PIL import Image
 
 def fetch_data():
-    server = "GFTUE2PDGPSQL01"
-    database = "GFT"
+    server = os.environ.get("server")
+    database = os.environ.get("database")
     username = os.environ.get("usernameGFT")
     password = os.environ.get("passwordGFT")
     conn_str = f"DRIVER={{/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.2.so.1.1}};SERVER={server};DATABASE={database};UID={username};PWD={password};"
