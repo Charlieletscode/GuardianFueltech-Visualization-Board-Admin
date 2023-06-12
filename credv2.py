@@ -14,7 +14,7 @@ def fetch_data():
     database = "GFT"
     username = os.environ.get("usernameGFT")
     password = os.environ.get("passwordGFT")
-    conn_str = f"DRIVER={{SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password};"
+    conn_str = f"DRIVER={{/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.2.so.1.1}};SERVER={server};DATABASE={database};UID={username};PWD={password};"
     conn = pyodbc.connect(conn_str)
 
     cursor = conn.cursor()
@@ -80,12 +80,12 @@ if "q3" not in st.session_state:
 if "img" not in st.session_state:
     st.session_state.img = None
 
-# if(st.session_state.q1 is None or st.session_state.q1.empty):
-#     st.session_state.q1, st.session_state.q2, st.session_state.q3, st.session_state.img = fetch_data()
-
-
 username = os.environ.get("usernameGFT")
 st.write(username)
+
+if(st.session_state.q1 is None or st.session_state.q1.empty):
+    st.session_state.q1, st.session_state.q2, st.session_state.q3, st.session_state.img = fetch_data()
+
 header_text = "Visualization Board Admin"
 
 col1, col2 = st.columns([5, 2])
