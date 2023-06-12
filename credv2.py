@@ -14,7 +14,7 @@ def fetch_data():
     database = os.environ.get("databaseGFT")
     username = os.environ.get("usernameGFT")
     password = os.environ.get("passwordGFT")
-    conn_str = f"DRIVER={{/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.2.so.1.1}};SERVER={server};DATABASE={database};UID={username};PWD={password};"
+    conn_str = f"DRIVER={{/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.2.so.1.1}};SERVER={server};DATABASE={database};UID={username};PWD={password};TrustServerCertificate=yes;"
     conn = pyodbc.connect(conn_str)
 
     cursor = conn.cursor()
