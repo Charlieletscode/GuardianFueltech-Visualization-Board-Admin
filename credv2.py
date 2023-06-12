@@ -4,8 +4,70 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import io
+import os
+import requests
+import pyodbc
 from PIL import Image
-from servertest import fetch_data
+
+def fetch_data():
+    server = "GFTUE2PDGPSQL01"
+    database = "GFT"
+    username = os.environ.get("usernameGFT")
+    password = os.environ.get("passwordGFT")
+    conn_str = f"DRIVER={{SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password};"
+    conn = pyodbc.connect(conn_str)
+
+    cursor = conn.cursor()
+
+    query1 = """
+    Exec [CF_Streamlit_Tickets]
+    """
+
+    cursor.execute(query1)
+    q1 = cursor.fetchall()
+    rows = []
+    for row in q1:
+        rows.append(list(row)) 
+    q1_df = pd.DataFrame(rows, columns=[
+        'Service_Call_ID', 'WS_Job_Number', 'Type_of_Problem', 'Technician', 'Technician_Team', 'Priority_of_Call',
+        'Status_of_Call', 'CUSTNMBR', 'CUSTNAME', 'LOCATNNM', 'ADDRESS1', 'CITY', 'STATE', 'ZIP', 'Batch_Number',
+        'Service_Description', 'Purchase_Order', 'Divisions', 'BranchName', 'GFT_Work_Flow_Status', 'Gilbarco_ID',
+        'Payment_Terms', 'User_Define_4a', 'Type_of_Call', 'Call_Invoice_Number', 'ADRSCODE', 'Service_Area',
+        'Completion_Date', 'Last_Service_Note', 'Last_Appointment_Status', 'Row_ID', 'Region'
+    ])
+
+    query2 = """
+    Exec [CF_Streamlit_30day_His]
+    """
+
+    cursor.execute(query2)
+    q2 = cursor.fetchall()
+    rows = []
+    for row in q2:
+        rows.append(list(row)) 
+    q2_df = pd.DataFrame(rows, columns=[
+        'Service_Call_ID', 'ADRSCODE', 'CUSTNMBR', 'Technician_Team', 'Service_Area', 'CUSTNAME', 'LOCATNNM', 'Technician',
+        'Type_of_Problem', 'Resolution_ID', 'Resolution_Description', 'Type_Call_Short', 'Type_of_Call', 'DATE1',
+        'Divisions', 'BranchName', 'WS_Job_Number', 'TransferToWSJob', 'Bill_Customer_Number', 'Region'
+    ])
+
+    query3 = """
+    Exec [CF_Streamlit_Daily_TLC]
+    """
+
+    cursor.execute(query3)
+    q3 = cursor.fetchall()
+    rows = []
+    for row in q3:
+        rows.append(list(row)) 
+    q3_df = pd.DataFrame(rows, columns=['Branch_Abv', 'BranchName', 'InsertDate', 'Daily_TLC', 'CompleteBranch', 'CompleteBilling', 'OpenTickets', 'NewCallCount', 'Region'])
+
+    cursor.close()
+    conn.close()
+    header_image_url = "https://github.com/Charlieletscode/GuardianFueltech-Visualization-Board-Admin/blob/main/Header.jpg?raw=true"
+    response = requests.get(header_image_url)
+
+    return q1_df, q2_df, q3_df, response
 
 st.set_page_config("Visualization Board Admin", layout="wide")
 
@@ -29,8 +91,18 @@ col1.title(header_text)
 image = Image.open(io.BytesIO(st.session_state.img.content))
 col2.image(image, use_column_width=True)
 
+st.sidebar.subheader("Region")
+region = sorted(st.session_state.q1['Region'].unique())
+all_option = "All"
+unique_region = [all_option] + list(region)
+selected_region = st.sidebar.multiselect("Select Unique Region", unique_region, default=[all_option])
+
+if all_option in selected_region:
+    selected_region = unique_region[1:]
+
+filtered_q1_df = st.session_state.q1[st.session_state.q1['Region'].isin(selected_region)]
 st.sidebar.subheader("BranchName")
-branch_names = sorted(st.session_state.q1['BranchName'].unique())
+branch_names = sorted(filtered_q1_df['BranchName'].unique())
 all_option = "All"
 unique_branch_names = [all_option] + list(branch_names)
 selected_branches = st.sidebar.multiselect("Select Branches", unique_branch_names, default=[all_option])
@@ -39,30 +111,25 @@ if all_option in selected_branches:
     selected_branches = unique_branch_names[1:]
 
 filtered_q1_df = st.session_state.q1[st.session_state.q1['BranchName'].isin(selected_branches)]
-
-# unique_service_call_ids = filtered_q1_df['Service_Call_ID'].unique()
-# all_option = "All"
-# unique_service_call_ids = [all_option] + list(unique_service_call_ids)
-# selected_service_call_ids = st.sidebar.multiselect("Select Service Call IDs", unique_service_call_ids, default=[all_option])
-
-# if all_option in selected_service_call_ids:
-#     selected_service_call_ids = unique_service_call_ids[1:]
-
-filtered_q2_df = st.session_state.q2
-# print(len(filtered_q2_df))
-# filtered_q1_df = st.session_state.q1[st.session_state.q1['Service_Call_ID'].isin(selected_service_call_ids)]
-# please use filtereddata
+filtered_q2_df = st.session_state.q2[st.session_state.q2['BranchName'].isin(selected_branches)]
+filtered_q3_df = st.session_state.q3[st.session_state.q3['BranchName'].isin(selected_branches)]
 
 last_30_days = pd.to_datetime('today') - pd.DateOffset(days=30)
 filtered_df = filtered_q2_df[pd.to_datetime(filtered_q2_df['DATE1']) >= last_30_days]
-# print("sec",len(filtered_df))
-print((filtered_q2_df['CUSTNMBR'] == 'CIR0001').sum())
-# filtered_df = filtered_q2_df[filtered_q2_df['Service_Call_ID'].isin(selected_service_call_ids)]
-# print(len(filtered_df))
 top_10_customers = filtered_df['CUSTNMBR'].value_counts().nlargest(10)
-# print(top_10_customers)
 top_10_df = pd.DataFrame({'CUSTNMBR': top_10_customers.index, 'Service_Call_Count': top_10_customers.values})
 fig = go.Figure(data=go.Scatter(x=top_10_df['CUSTNMBR'], y=top_10_df['Service_Call_Count'], mode='lines+markers'))
+
+for index, row in top_10_df.iterrows():
+    fig.add_annotation(
+        x=row['CUSTNMBR'],
+        y=row['Service_Call_Count'],
+        text=str(row['Service_Call_Count']),
+        showarrow=False,
+        font=dict(size=20),
+        xshift=0,
+        yshift=15
+    )
 
 fig.update_layout(
     title='Top 10 Customers by Service Call Count (Last 30 Days)',
@@ -124,83 +191,70 @@ with st.container():
     # st.markdown("<h2 style='text-align: center;'>Line Chart</h2>", unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-col1,col2 = st.columns(2)
-latest_dates = filtered_q2_df['DATE1'].nlargest(7).unique()
-print(latest_dates)
-filtered_data = filtered_q2_df[(filtered_q2_df['BranchName'].isin(selected_branches)) & (filtered_q2_df['DATE1'].isin(latest_dates))]
+filtered_q2_df['DATE1'] = pd.to_datetime(filtered_q2_df['DATE1'])
+latest_dates = pd.Series(filtered_q2_df['DATE1'].unique()).nlargest(7).tolist()
+filtered_data = filtered_q2_df[(filtered_q2_df['DATE1'].isin(latest_dates))]
 grouped_data = filtered_data.groupby(['DATE1', 'BranchName']).size().reset_index(name='Count')
 fig = px.scatter(grouped_data, x='DATE1', y='Count', color='BranchName', title='DailyTLC by Branch', 
                 labels={'DATE1': 'DATE1', 'Count': 'Count'})
 
+fig.add_shape(
+    type='line',
+    xref='paper',
+    x0=0,
+    x1=1,
+    y0=10,
+    y1=10,
+    line=dict(color='royalblue', width=2)
+)
+
+for _, row in grouped_data.iterrows():
+    fig.add_annotation(
+        x=row['DATE1'],
+        y=row['Count'],
+        text=str(row['Count']),
+        showarrow=False,
+        font=dict(size=12),
+        xshift=15,
+        yshift=-1
+    )
+
 fig.update_xaxes(dtick='MTWTF', tickformat='%m-%d-%Y')
-fig.update_layout(width=350)
 
-# charttable
+fig.update_layout(
+    legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=1.02,
+        xanchor='center',
+        x=0.5,
+        title='',
+    ),
+    xaxis_title=None,
+    yaxis_title=None,    
+    title=dict(
+        y=1 
+    )
+)
 
-filtered_data = filtered_q2_df[(filtered_q2_df['BranchName'].isin(selected_branches)) & (filtered_q2_df['DATE1'].isin(latest_dates))]
-grouped_data = filtered_data.groupby(['BranchName', 'DATE1']).size().reset_index(name='Count')
-pivot_table = pd.pivot_table(grouped_data, values='Count', index='DATE1', columns='BranchName', fill_value=0)
-latest_dates = grouped_data['DATE1'].nlargest(7).unique()
+st.plotly_chart(fig, use_container_width=True)
 
-new_columns = []
-for branch in selected_branches:
-    new_columns.append((branch, 'New Call Count'))
-    new_columns.append((branch, 'Open Tickets'))
-pivot_table = pivot_table.reindex(columns=new_columns).fillna(0)
-
-
-with col1:
-    st.plotly_chart(fig)
-
-with col2:
-    if pivot_table.empty:
-        st.write("No data available.")
-    else:
-        pivot_table = pivot_table.loc[latest_dates]
-        pivot_table.columns = pd.MultiIndex.from_tuples(pivot_table.columns)
-        st.table(pivot_table)
+# piv table
+filtered_q3_df['InsertDate'] = pd.to_datetime(filtered_q3_df['InsertDate'])
+latest_dates = pd.Series(filtered_q3_df['InsertDate'].unique()).nlargest(7).tolist()
+filtered_data = filtered_q3_df[filtered_q3_df['InsertDate'].isin(latest_dates)]
+pivot_table = pd.pivot_table(filtered_data, values=['NewCallCount', 'OpenTickets', 'CompleteBranch', 'CompleteBilling'],
+                             index='InsertDate', columns='BranchName', fill_value=0)
+st.table(pivot_table)
 
 
 # last graph
-oldest_service_calls = filtered_q2_df.sort_values(by='DATE1').tail(10)
-oldest_dates = oldest_service_calls['DATE1'].tolist()
+filtered_q1_df['Completion_Date'] = pd.to_datetime(filtered_q1_df['Completion_Date'])
+oldest_date = pd.Series(filtered_q1_df['Completion_Date'].unique()).nsmallest(10).tolist()
+filtered_data = filtered_q1_df[(filtered_q1_df['Completion_Date'].isin(oldest_date))]
+oldest_service_calls = filtered_data.sort_values(by='Completion_Date')
+oldest_dates = oldest_service_calls['Completion_Date'].tolist()
 
 st.write("Oldest Service Calls:")
 st.dataframe(oldest_service_calls)
-
-# if(login):
-    
-# else:
-#     st.title("GeoTab API Credentials")
-#     username = st.text_input("Username")
-#     password = st.text_input("Password", type="password")
-#     database = st.text_input("Database")
-
-#     with open('authauth.json', 'r') as f:
-#         api_key = json.load(f)
-#     username = api_key["username"]
-#     password = api_key["password"]
-#     database = api_key["database"]
-
-    # if st.button("Submit") or login:
-    #     api = mygeotab.API(username=username, password=password, database=database)
-    #     try:
-    #         api.authenticate()
-    #     except mygeotab.AuthenticationException as ex:
-    #         st.error("Credentials incorrect")
-    #     else:
-    #         # after login container is cleaned
-    #         st.success("Credentials correct!")
-    #         login = True
-    #         from_date = datetime(2023,1,1)
-    #         to_date = date.today()
-    #         results_limit = ""
-
-
-            # st.empty() 
-            # st.experimental_rerun()
-
-
-    
-
     
