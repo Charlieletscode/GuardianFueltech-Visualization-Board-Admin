@@ -80,9 +80,6 @@ if "q3" not in st.session_state:
 if "img" not in st.session_state:
     st.session_state.img = None
 
-username = os.environ.get("serverGFT")
-st.write(username)
-
 if(st.session_state.q1 is None or st.session_state.q1.empty):
     st.session_state.q1, st.session_state.q2, st.session_state.q3, st.session_state.img = fetch_data()
 
