@@ -10,11 +10,12 @@ import pyodbc
 from PIL import Image
 
 def fetch_data():
-    server = os.environ.get("serverGFT")
-    database = os.environ.get("databaseGFT")
-    username = os.environ.get("usernameGFT")
-    password = os.environ.get("passwordGFT")
-    conn_str = f"DRIVER={{/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.2.so.1.1}};SERVER={server};DATABASE={database};UID={username};PWD={password};TrustServerCertificate=yes;"
+    server = "GFTUE2PDGPSQL01"
+    database = "GFT"
+    
+    username = "streamlit"
+    password = "2uMMN@UOXheky2nhC1NsqHg6A"
+    conn_str = f"DRIVER={{SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password};"
     conn = pyodbc.connect(conn_str)
 
     cursor = conn.cursor()
@@ -71,6 +72,14 @@ def fetch_data():
 
 st.set_page_config("Visualization Board Admin", layout="wide")
 
+hide_menu_style = """
+        <style>
+        #MainMenu {visibility: hidden; }
+        footer {visibility: hidden;}
+        </style>
+        """
+st.markdown(hide_menu_style, unsafe_allow_html=True)
+
 if "q1" not in st.session_state:
     st.session_state.q1 = None
 if "q2" not in st.session_state:
@@ -92,7 +101,7 @@ image = Image.open(io.BytesIO(st.session_state.img.content))
 col2.image(image, use_column_width=True)
 
 st.sidebar.subheader("Region")
-region = sorted(st.session_state.q1['Region'].unique())
+region = sorted([value for value in st.session_state.q1['Region'].unique() if value is not None])
 all_option = "All"
 unique_region = [all_option] + list(region)
 selected_region = st.sidebar.multiselect("Select Unique Region", unique_region, default=[all_option])
