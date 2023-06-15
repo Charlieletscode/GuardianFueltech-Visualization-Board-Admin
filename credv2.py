@@ -200,12 +200,12 @@ with st.container():
     # st.markdown("<h2 style='text-align: center;'>Line Chart</h2>", unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-filtered_q2_df['DATE1'] = pd.to_datetime(filtered_q2_df['DATE1'])
-latest_dates = pd.Series(filtered_q2_df['DATE1'].unique()).nlargest(7).tolist()
-filtered_data = filtered_q2_df[(filtered_q2_df['DATE1'].isin(latest_dates))]
-grouped_data = filtered_data.groupby(['DATE1', 'BranchName']).size().reset_index(name='Count')
-fig = px.scatter(grouped_data, x='DATE1', y='Count', color='BranchName', title='DailyTLC by Branch', 
-                labels={'DATE1': 'DATE1', 'Count': 'Count'})
+filtered_q3_df['InsertDate'] = pd.to_datetime(filtered_q3_df['InsertDate'])
+latest_dates = pd.Series(filtered_q3_df['InsertDate'].unique()).nlargest(7).tolist()
+filtered_data = filtered_q3_df[(filtered_q3_df['InsertDate'].isin(latest_dates))]
+filtered_data['Daily_TLC'] = pd.to_numeric(filtered_data['Daily_TLC'])
+fig = px.scatter(filtered_data, x='InsertDate', y='Daily_TLC', color='BranchName', 
+                 title='DailyTLC by Branch')
 
 fig.add_shape(
     type='line',
@@ -217,11 +217,12 @@ fig.add_shape(
     line=dict(color='royalblue', width=2)
 )
 
-for _, row in grouped_data.iterrows():
+for _, row in filtered_data.iterrows():
+    rounded_tlc = round(row['Daily_TLC'])  # Round the 'Daily_TLC' value to 2 decimal places
     fig.add_annotation(
-        x=row['DATE1'],
-        y=row['Count'],
-        text=str(row['Count']),
+        x=row['InsertDate'],
+        y=row['Daily_TLC'],
+        text=str(rounded_tlc),  # Use the rounded value in the annotation text
         showarrow=False,
         font=dict(size=12),
         xshift=15,
@@ -229,7 +230,6 @@ for _, row in grouped_data.iterrows():
     )
 
 fig.update_xaxes(dtick='MTWTF', tickformat='%m-%d-%Y')
-
 fig.update_layout(
     legend=dict(
         orientation='h',
