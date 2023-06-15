@@ -259,11 +259,17 @@ st.table(pivot_table)
 
 # last graph
 filtered_q1_df['Completion_Date'] = pd.to_datetime(filtered_q1_df['Completion_Date'])
-oldest_date = pd.Series(filtered_q1_df['Completion_Date'].unique()).nsmallest(10).tolist()
+filtered_q1_df = filtered_q1_df[~(filtered_q1_df['Service_Call_ID'].isnull() | (filtered_q1_df['Completion_Date'] == '1900-01-01'))]
+oldest_date = filtered_q1_df['Completion_Date'].nsmallest(10).tolist()
+print(oldest_date)
 filtered_data = filtered_q1_df[(filtered_q1_df['Completion_Date'].isin(oldest_date))]
 oldest_service_calls = filtered_data.sort_values(by='Completion_Date')
 oldest_dates = oldest_service_calls['Completion_Date'].tolist()
 
+oldest_service_calls = oldest_service_calls.reset_index(drop=True)
+oldest_service_calls.index = oldest_service_calls.index + 1
+
 st.write("Oldest Service Calls:")
 st.dataframe(oldest_service_calls)
+    
     
