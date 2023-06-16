@@ -228,6 +228,7 @@ cols[5].markdown("<div style='text-align: center; height: 75px; '>"
                 "</div>", unsafe_allow_html=True)
 
 st.markdown("---")
+st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 filtered_q3_df['InsertDate'] = pd.to_datetime(filtered_q3_df['InsertDate'])
 filtered_data = filtered_q3_df
