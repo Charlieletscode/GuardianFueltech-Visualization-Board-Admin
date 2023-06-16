@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import io
 import os
+import time
 import requests
 import pyodbc
 from PIL import Image
