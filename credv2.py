@@ -10,7 +10,6 @@ import pyodbc
 from PIL import Image
 
 def fetch_data():
-    
     server = os.environ.get("serverGFT")
     database = os.environ.get("databaseGFT")
     username = os.environ.get("usernameGFT")
@@ -70,6 +69,36 @@ def fetch_data():
 
     return q1_df, q2_df, q3_df, response
 
+def fetchq1():
+    server = os.environ.get("serverGFT")
+    database = os.environ.get("databaseGFT")
+    username = os.environ.get("usernameGFT")
+    password = os.environ.get("passwordGFT")
+    conn_str = f"DRIVER={{/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.2.so.1.1}};SERVER={server};DATABASE={database};UID={username};PWD={password};TrustServerCertificate=yes;"
+    conn = pyodbc.connect(conn_str)
+
+    cursor = conn.cursor()
+
+    query1 = """
+    Exec [CF_Streamlit_Tickets]
+    """
+
+    cursor.execute(query1)
+    q1 = cursor.fetchall()
+    rows = []
+    for row in q1:
+        rows.append(list(row)) 
+    q1_df = pd.DataFrame(rows, columns=[
+        'Service_Call_ID', 'WS_Job_Number', 'Type_of_Problem', 'Technician', 'Technician_Team', 'Priority_of_Call',
+        'Status_of_Call', 'CUSTNMBR', 'CUSTNAME', 'LOCATNNM', 'ADDRESS1', 'CITY', 'STATE', 'ZIP', 'Batch_Number',
+        'Service_Description', 'Purchase_Order', 'Divisions', 'BranchName', 'GFT_Work_Flow_Status', 'Gilbarco_ID',
+        'Payment_Terms', 'User_Define_4a', 'Type_of_Call', 'Call_Invoice_Number', 'ADRSCODE', 'Service_Area',
+        'Completion_Date', 'Last_Service_Note', 'Last_Appointment_Status', 'Row_ID', 'Region'
+    ])
+    cursor.close()
+    conn.close()
+    return q1_df
+
 st.set_page_config("Visualization Board Admin", layout="wide")
 
 hide_menu_style = """
@@ -104,10 +133,12 @@ st.sidebar.subheader("Region")
 region = sorted([value for value in st.session_state.q1['Region'].unique() if value is not None])
 all_option = "All"
 unique_region = [all_option] + list(region)
-selected_region = st.sidebar.multiselect("Select Unique Region", unique_region, default=[all_option])
+selected_region = st.sidebar.selectbox("Select Unique Region", unique_region, index=0)
 
-if all_option in selected_region:
-    selected_region = unique_region[1:]
+if selected_region == all_option:
+    selected_region = unique_region[1:] if len(unique_region) > 1 else []
+else:
+    selected_region = [selected_region]
 
 filtered_q1_df = st.session_state.q1[st.session_state.q1['Region'].isin(selected_region)]
 st.sidebar.subheader("BranchName")
@@ -195,17 +226,13 @@ cols[5].markdown("<div style='text-align: center; height: 75px; '>"
                 f"<h4>{hold_other}</h4>"
                 "</div>", unsafe_allow_html=True)
 
-with st.container():
-    st.markdown("---")
-    # st.markdown("<h2 style='text-align: center;'>Line Chart</h2>", unsafe_allow_html=True)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+st.markdown("---")
 
 filtered_q3_df['InsertDate'] = pd.to_datetime(filtered_q3_df['InsertDate'])
-latest_dates = pd.Series(filtered_q3_df['InsertDate'].unique()).nlargest(7).tolist()
-filtered_data = filtered_q3_df[(filtered_q3_df['InsertDate'].isin(latest_dates))]
+filtered_data = filtered_q3_df
 filtered_data['Daily_TLC'] = pd.to_numeric(filtered_data['Daily_TLC'])
 fig = px.scatter(filtered_data, x='InsertDate', y='Daily_TLC', color='BranchName', 
-                 title='DailyTLC by Branch')
+                title='DailyTLC by Branch')
 
 fig.add_shape(
     type='line',
@@ -218,11 +245,11 @@ fig.add_shape(
 )
 
 for _, row in filtered_data.iterrows():
-    rounded_tlc = round(row['Daily_TLC'])  # Round the 'Daily_TLC' value to 2 decimal places
+    rounded_tlc = round(row['Daily_TLC'], 2) 
     fig.add_annotation(
         x=row['InsertDate'],
         y=row['Daily_TLC'],
-        text=str(rounded_tlc),  # Use the rounded value in the annotation text
+        text=str(rounded_tlc),
         showarrow=False,
         font=dict(size=12),
         xshift=15,
@@ -253,7 +280,7 @@ filtered_q3_df['InsertDate'] = pd.to_datetime(filtered_q3_df['InsertDate'])
 latest_dates = pd.Series(filtered_q3_df['InsertDate'].unique()).nlargest(7).tolist()
 filtered_data = filtered_q3_df[filtered_q3_df['InsertDate'].isin(latest_dates)]
 pivot_table = pd.pivot_table(filtered_data, values=['NewCallCount', 'OpenTickets', 'CompleteBranch', 'CompleteBilling'],
-                             index='InsertDate', columns='BranchName', fill_value=0)
+                            index='InsertDate', columns='BranchName', fill_value=0)
 st.table(pivot_table)
 
 
@@ -261,7 +288,6 @@ st.table(pivot_table)
 filtered_q1_df['Completion_Date'] = pd.to_datetime(filtered_q1_df['Completion_Date'])
 filtered_q1_df = filtered_q1_df[~(filtered_q1_df['Service_Call_ID'].isnull() | (filtered_q1_df['Completion_Date'] == '1900-01-01'))]
 oldest_date = filtered_q1_df['Completion_Date'].nsmallest(10).tolist()
-print(oldest_date)
 filtered_data = filtered_q1_df[(filtered_q1_df['Completion_Date'].isin(oldest_date))]
 oldest_service_calls = filtered_data.sort_values(by='Completion_Date')
 oldest_dates = oldest_service_calls['Completion_Date'].tolist()
@@ -269,7 +295,12 @@ oldest_dates = oldest_service_calls['Completion_Date'].tolist()
 oldest_service_calls = oldest_service_calls.reset_index(drop=True)
 oldest_service_calls.index = oldest_service_calls.index + 1
 
-st.write("Oldest Service Calls:")
+st.write("10 Oldest Service Calls:")
 st.dataframe(oldest_service_calls)
-    
+
+while True:
+    time.sleep(900)
+    st.session_state.q1 = fetchq1()
+    print(st.session_state.q1)
+    st.experimental_rerun()
     
